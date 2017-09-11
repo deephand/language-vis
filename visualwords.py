@@ -7,7 +7,7 @@ import numpy as np
 ##currently available languages:
 languages = ['de','en','fr','nl','tr']
 dataset_folder = 'dataset/'
-WORD_COUNT = 100000		#set -1 to parse all words
+WORD_COUNT = 200000		#set -1 to parse all words
 
 
 ##set_characters function:
@@ -112,12 +112,27 @@ def calculate_features(dataFrames, consonants, vowels):
 		print('language ' + language + ' completed.')
 	dataFrame_cv = pd.DataFrame(data=list(features.values()),
 								index=features.keys(),
-								columns=['cc', 'cv', 'vc', 'vv', 'samecc',
-										 'samevv','totalwordlen','wordcnt'])
+								columns=['cc', 'cv', 'vc', 'vv', 'samevv',
+										 'samecc','totalwordlen','wordcnt'])
 	return dataFrame_cv
+
+##normalize_toall function:
+#2-grams are either cc,cv,vc or vv; they are normalized to sum of all
+#some 2-grams may be same character (samecc or samevv);
+#they are normalized to number of words
+def normalize_toall(df):
+	df_n = pd.DataFrame(df)
+	print(df_n)
+	print()
+	df_n.iloc[:,4:6] = df_n.iloc[:,4:6].div(df_n.iloc[:,0:4].sum(axis=1), axis=0)
+	df_n.iloc[:,0:4] = df_n.iloc[:,0:4].div(df_n.iloc[:,0:4].sum(axis=1), axis=0)
+	df_n.iloc[:,6] = df_n.iloc[:,6].div(df_n.iloc[:,7], axis=0)
+	print()
+	print(df_n)
+
 
 consonants, vowels = set_characters(languages, True)
 dataFrames = read_files(languages)
 dataFrames = remove_intruders(dataFrames, consonants, vowels)
 df = calculate_features(dataFrames, consonants, vowels)
-print(df)
+df_n = normalize_toall(df)
