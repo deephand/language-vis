@@ -7,7 +7,7 @@ import numpy as np
 ##currently available languages:
 languages = ['de','en','fr','nl','tr']
 dataset_folder = 'dataset/'
-WORD_COUNT = 200000		#set -1 to parse all words
+WORD_COUNT = 100000		#set -1 to parse all words
 
 
 ##set_characters function:
@@ -19,7 +19,7 @@ WORD_COUNT = 200000		#set -1 to parse all words
 def set_characters(languages, lang_by_lang = True):
 	consonants = {}
 	vowels = {}
-	vowels['de'] = 	 	set(['a','e','i','u','o','ü','ä','ö','ü'])
+	vowels['de'] =      set(['a','e','i','u','o','ü','ä','ö','ü'])
 	consonants['de'] =  set(['b','c','d','f','g','h','j','k','l','m',
 						  	 'n','p','q','r','s','t','v','w','x','y',
 						  	 'z','ß'])
@@ -82,10 +82,15 @@ def remove_intruders(dataFrames, consonants, vowels):
 	return dataFrames
 
 
+
+##calculate_features function:
+#calculates the number of concurrences of 2-grams
+#consonant after consonant(0), consonant after vowel(1), etc
+#same consonants(4), same vowels(5)
 def calculate_features(dataFrames, consonants, vowels):
 	features = {}
 	for language in dataFrames:
-		features[language] = np.zeros(6)
+		features[language] = np.zeros(8)
 		dataFrame = dataFrames[language]
 		words = dataFrame.index.values
 		for word in words:
@@ -101,15 +106,17 @@ def calculate_features(dataFrames, consonants, vowels):
 			features[language][:4] = features[language][:4] + cnts
 			features[language][4] = features[language][4] + sum(word_convert2)
 			features[language][5] = features[language][5] + sum(word_convert3)
+			features[language][6] = features[language][6] + len(word)
 			#print(word, cnts, sum(word_convert2), sum(word_convert3))
-		print(language, ': ', features[language], ' length: ', sum(features[language]),
-				' normalised: ', features[language] / sum(features[language]))
+		features[language][7] = len(words)
+		print('language ' + language + ' completed.')
 	dataFrame_cv = pd.DataFrame(data=list(features.values()),
 								index=features.keys(),
-								columns=['cc', 'cv', 'vc', 'vv', 'samecc', 'samevv'])
+								columns=['cc', 'cv', 'vc', 'vv', 'samecc',
+										 'samevv','totalwordlen','wordcnt'])
 	return dataFrame_cv
 
-consonants, vowels = set_characters(languages, False)
+consonants, vowels = set_characters(languages, True)
 dataFrames = read_files(languages)
 dataFrames = remove_intruders(dataFrames, consonants, vowels)
 df = calculate_features(dataFrames, consonants, vowels)
