@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+#dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
 ##currently available languages:
 languages = ['de','en','fr','nl','tr']
 dataset_folder = 'dataset/'
-WORD_COUNT = 200000		#set -1 to parse all words
+WORD_COUNT = 100000						#set -1 to parse all words
 
 
 ##set_characters function:
@@ -119,16 +120,13 @@ def calculate_features(dataFrames, consonants, vowels):
 ##normalize_toall function:
 #2-grams are either cc,cv,vc or vv; they are normalized to sum of all
 #some 2-grams may be same character (samecc or samevv);
-#they are normalized to number of words
+#they are normalized to the sum of cc,cv,vc,vv
 def normalize_toall(df):
-	df_n = pd.DataFrame(df)
-	print(df_n)
-	print()
+	df_n = pd.DataFrame(df, copy=True)
 	df_n.iloc[:,4:6] = df_n.iloc[:,4:6].div(df_n.iloc[:,0:4].sum(axis=1), axis=0)
 	df_n.iloc[:,0:4] = df_n.iloc[:,0:4].div(df_n.iloc[:,0:4].sum(axis=1), axis=0)
 	df_n.iloc[:,6] = df_n.iloc[:,6].div(df_n.iloc[:,7], axis=0)
-	print()
-	print(df_n)
+	return df_n
 
 
 consonants, vowels = set_characters(languages, True)
@@ -136,3 +134,4 @@ dataFrames = read_files(languages)
 dataFrames = remove_intruders(dataFrames, consonants, vowels)
 df = calculate_features(dataFrames, consonants, vowels)
 df_n = normalize_toall(df)
+print(df_n)
