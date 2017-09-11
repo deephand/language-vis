@@ -3,52 +3,76 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
+#languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
+##currently available languages:
 languages = ['de','en','fr','nl','tr']
 dataset_folder = 'dataset/'
+WORD_COUNT = 200000		#set -1 to parse all words
 
 
-vowels = set(['a','e','i','ı','u','ü','o','ö','ä','å','é','è','ê','ë','î','ï','ô','œ',
-			'ù','ú','û','æ','â','à','ã','ì','í','ò','ó','õ'])
-consonants = set(['b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v'
-				'w','x','y','z','ß','ñ','ÿ','ğ','ş','ç'])
-all_letters = set()
-vowels_de = set(['a','e','i','u','o','ü','ä','ö','ü'])
-consonants_de = set(['b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z','ß'])
-vowels_en = set(['a','e','i','u','o'])
-consonants_en = set(['b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z'])
-vowels_tr = set(['a','e','i','u','o','ı','ü','ö','â','û','î'])
-consonants_tr = set(['b','c','d','f','g','h','j','k','l','m','n','p','r','s','t','v','y','z','ç','ğ','ş'])
-vowels_nl = set(['a','e','i','u','o','ë'])
-consonants_nl = set(['b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z'])
-vowels_fr = set(['a','e','i','u','o','æ','â','à','é','è','ê','ë','î','ï','ô','œ',
-			'ù','û','ü'])
-consonants_fr = set(['b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z','ç','ÿ'])
-consonants = {}
-consonants[languages[0]] = consonants_de
-consonants[languages[1]] = consonants_en
-consonants[languages[2]] = consonants_fr
-consonants[languages[3]] = consonants_nl
-consonants[languages[4]] = consonants_tr
-vowels = {}
-vowels[languages[0]] = vowels_de
-vowels[languages[1]] = vowels_en
-vowels[languages[2]] = vowels_fr
-vowels[languages[3]] = vowels_nl
-vowels[languages[4]] = vowels_tr
+##set_characters function:
+#use this function to generate consonants & vowels for languages
+#before adding a new language, add the language's consonants and vowels
+#in the sets 'consonants' and 'vowels'
+#to use the same vowels & consonants in all languages
+#call the function with lang_by_lang = False
+def set_characters(languages, lang_by_lang = True):
+	consonants = {}
+	vowels = {}
+	vowels['de'] = 	 	set(['a','e','i','u','o','ü','ä','ö','ü'])
+	consonants['de'] =  set(['b','c','d','f','g','h','j','k','l','m',
+						  	 'n','p','q','r','s','t','v','w','x','y',
+						  	 'z','ß'])
+	vowels['en'] = 	 	set(['a','e','i','u','o'])
+	consonants['en'] =  set(['b','c','d','f','g','h','j','k','l','m',
+						  	 'n','p','q','r','s','t','v','w','x','y',
+						  	 'z'])
+	vowels['tr'] = 	 	set(['a','e','i','u','o','ı','ü','ö','â','û',
+						  	 'î'])
+	consonants['tr'] =  set(['b','c','d','f','g','h','j','k','l','m',
+						  	 'n','p','r','s','t','v','y','z','ç','ğ',
+						  	 'ş'])
+	vowels['nl'] = 	 	set(['a','e','i','u','o','ë'])
+	consonants['nl'] =  set(['b','c','d','f','g','h','j','k','l','m',
+						  	 'n','p','q','r','s','t','v','w','x','y',
+						  	 'z'])
+	vowels['fr'] = 	 	set(['a','e','i','u','o','æ','â','à','é','è',
+						  	 'ê','ë','î','ï','ô','œ','ù','û','ü'])
+	consonants['fr'] =  set(['b','c','d','f','g','h','j','k','l','m',
+						  	 'n','p','q','r','s','t','v','w','x','y',
+						  	 'z','ç','ÿ'])
+	if not lang_by_lang:
+		consonants_all = []
+		vowels_all = []
+		for language in languages:
+			consonants_all = consonants_all + list(consonants[language])
+			vowels_all = vowels_all + list(vowels[language])
+		consonants_all = set(consonants_all)
+		vowels_all = set(vowels_all)
+		for language in languages:
+			consonants[language] = consonants_all
+			vowels[language] = vowels_all
+	return consonants, vowels
 
 
-def readFiles(languages):
+##read_files function:
+#given all the languages, reads the word list in the dataset folder
+#returns dataFrames with the first WORD_COUNT words for every language
+#words as index and counts in count column
+def read_files(languages):
 	dataFrames = {}
 	for language in languages:
 		dataFrame = pd.read_csv(dataset_folder+language+'.txt',
 							sep =' ', header=None, names=['count'], index_col=0)
-		#dataFrame = dataFrame.iloc[0:100000,:]
+		dataFrame = dataFrame.iloc[0:WORD_COUNT,:]
 		dataFrames[language] = dataFrame
 	return dataFrames
 
 
-def remove_intruders(dataFrames):
+##remove_intruders function:
+#removes any word in dataFrames which contains a character that is not in
+#consonants or vowels of that language
+def remove_intruders(dataFrames, consonants, vowels):
 	for language in dataFrames:
 		#print(vowels[language]+consonants[language])
 		bad_words = [word for word in list(dataFrames[language].index) if
@@ -58,7 +82,7 @@ def remove_intruders(dataFrames):
 	return dataFrames
 
 
-def calculate_features(dataFrames):
+def calculate_features(dataFrames, consonants, vowels):
 	features = {}
 	for language in dataFrames:
 		features[language] = np.zeros(6)
@@ -80,7 +104,13 @@ def calculate_features(dataFrames):
 			#print(word, cnts, sum(word_convert2), sum(word_convert3))
 		print(language, ': ', features[language], ' length: ', sum(features[language]),
 				' normalised: ', features[language] / sum(features[language]))
+	dataFrame_cv = pd.DataFrame(data=list(features.values()),
+								index=features.keys(),
+								columns=['cc', 'cv', 'vc', 'vv', 'samecc', 'samevv'])
+	return dataFrame_cv
 
-dataFrames = readFiles(languages)
-dataFrames = remove_intruders(dataFrames)
-calculate_features(dataFrames)
+consonants, vowels = set_characters(languages, False)
+dataFrames = read_files(languages)
+dataFrames = remove_intruders(dataFrames, consonants, vowels)
+df = calculate_features(dataFrames, consonants, vowels)
+print(df)
