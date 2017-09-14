@@ -174,22 +174,23 @@ def evaluate(str_features, language_features, evalfun = err_l2):
 	return evalfun(mx1, mx2)
 
 
-print("setting characters...")
-consonants, vowels = set_characters(languages, True)
-print("reading datasets...")
-dataFrames = read_files(languages)
-print("removing erroneous words...")
-dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
-print("calculating 2-gram features of the dataset...")
-df = calculate_features_all(dataFrames, consonants, vowels)
-df_n = normalize_toall(df)
-print(df_n.iloc[:,0:7], '\n')
-while text != "q":
-	if text is "q":
-		break
-	text = input("Enter a text, q to exit: ")
-	print("calculating 2-gram features of the input text...")
-	str_features = calculate_str_features(text, consonants, vowels, languages)
-	print(str_features[0:7], '\n')
-	val = evaluate(str_features, df_n)
-	print("Errors:", list(zip(languages,val)))
+if __name__ == "__main__":
+	print("setting characters...")
+	consonants, vowels = set_characters(languages, True)
+	print("reading datasets...")
+	dataFrames = read_files(languages)
+	print("removing erroneous words...")
+	dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
+	print("calculating 2-gram features of the dataset...")
+	df = calculate_features_all(dataFrames, consonants, vowels)
+	df_n = normalize_toall(df)
+	print(df_n.iloc[:,0:7], '\n')
+	while text != "q":
+		if text is "q":
+			break
+		text = input("Enter a text, q to exit: ")
+		print("calculating 2-gram features of the input text...")
+		str_features = calculate_str_features(text, consonants, vowels, languages)
+		print(str_features[0:7], '\n')
+		val = evaluate(str_features, df_n)
+		print("Errors:", list(zip(languages,val)))
