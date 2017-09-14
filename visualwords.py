@@ -2,6 +2,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import pickle
+import argparse
+import os.path
+
 
 #dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
@@ -61,13 +65,19 @@ def set_characters(languages, lang_by_lang = True):
 #given all the languages, reads the word list in the dataset folder
 #returns dataFrames with the first WORD_COUNT words for every language
 #words as index and counts in count column
-def read_files(languages):
-	dataFrames = {}
-	for language in languages:
-		dataFrame = pd.read_csv(dataset_folder+language+'.txt',
-							sep =' ', header=None, names=['count'], index_col=0)
-		dataFrame = dataFrame.iloc[0:WORD_COUNT,:]
-		dataFrames[language] = dataFrame
+def read_files(languages, refresh_cache = False):
+	if not os.path.isfile(dataset_folder+"dataframes.p") or refresh_cache:
+		dataFrames = {}
+		for language in languages:
+			dataFrame = pd.read_csv(dataset_folder+language+'.txt',
+								sep =' ', header=None, names=['count'], index_col=0)
+			dataFrame = dataFrame.iloc[0:WORD_COUNT,:]
+			dataFrames[language] = dataFrame
+		pickle.dump(dataFrames, open(dataset_folder+"dataframes.p", "wb" ))
+	else:
+		print('cache found for the files')
+		dataFrames = pickle.load(open(dataset_folder+"dataframes.p", "rb" ))
+		
 	return dataFrames
 
 
@@ -114,13 +124,18 @@ def calculate_features(dataFrame, consonants, vowels, language):
 	dataFrame_one = pd.DataFrame(data=[feature_list],
 								index=[language],
 								columns=['cc', 'cv', 'vc', 'vv', 'samevv',
-										 'samecc','totalwordlen','wordcnt'])
+										'samecc','totalwordlen','wordcnt'])
 	return dataFrame_one
 
-def calculate_features_all(dataFrames, consonants, vowels):
-	frames = [calculate_features(dataFrames[language], consonants[language],
-				vowels[language], language) for	language in dataFrames]
-	dataFrame_cv = pd.concat(frames)
+def calculate_features_all(dataFrames, consonants, vowels, refresh_cache = False):
+	if not os.path.isfile(dataset_folder+"features.p") or refresh_cache:
+		frames = [calculate_features(dataFrames[language], consonants[language],
+					vowels[language], language) for	language in dataFrames]
+		dataFrame_cv = pd.concat(frames)
+		pickle.dump(dataFrame_cv, open(dataset_folder+"features.p", "wb" ))
+	else:
+		print('cache found for the features')
+		dataFrame_cv  = pickle.load(open(dataset_folder+"features.p", "rb" ))
 	return dataFrame_cv
 
 
@@ -175,20 +190,26 @@ def evaluate(str_features, language_features, evalfun = err_l2):
 
 
 if __name__ == "__main__":
+	
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-r", "--refresh", help="refresh data cache",
+                    action="store_true")
+	args = parser.parse_args()
+
 	print("setting characters...")
 	consonants, vowels = set_characters(languages, True)
 	print("reading datasets...")
-	dataFrames = read_files(languages)
+	dataFrames = read_files(languages, refresh_cache=args.refresh)
 	print("removing erroneous words...")
 	dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
 	print("calculating 2-gram features of the dataset...")
-	df = calculate_features_all(dataFrames, consonants, vowels)
+	df = calculate_features_all(dataFrames, consonants, vowels, refresh_cache=args.refresh)
 	df_n = normalize_toall(df)
 	print(df_n.iloc[:,0:7], '\n')
 	while text != "q":
+		text = input("Enter a text, q to exit: ")
 		if text is "q":
 			break
-		text = input("Enter a text, q to exit: ")
 		print("calculating 2-gram features of the input text...")
 		str_features = calculate_str_features(text, consonants, vowels, languages)
 		print(str_features[0:7], '\n')
