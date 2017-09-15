@@ -33,4 +33,4 @@ if __name__ == "__main__":
 		print(df_n.iloc[:,0:15], '\n')
 		print(str_features.iloc[:,0:15], '\n')
 		val = evaluate(str_features, df_n)
-		print("Errors:", list(zip(languages,val)))
+		print("Errors:", sorted(list(zip(languages,val)),key=lambda item: item[1]))
