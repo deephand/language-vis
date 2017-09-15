@@ -1,12 +1,18 @@
 import numpy as np
 import pandas as pd
+import string
 from dataset_functions import calculate_features, normalize_toall,remove_intruders
 
 ##calculate_str_features function:
 #this function returns the normalized features in all languages of a given text
 def calculate_str_features(text, consonants, vowels, languages):
 	word_counts = {}
-	words = text.split(sep=' ')
+	#convert punctuation to white space
+	translator = str.maketrans(string.punctuation, " "*len(string.punctuation))
+	text = text.translate(translator)
+	words = text.split()
+	print(words)
+	#create dataset like dataframe index column: word; count column: number of occurrences
 	for word in words:
 		if word in word_counts:
 			word_counts[word] += 1

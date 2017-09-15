@@ -10,7 +10,7 @@ import os.path
 languages = ['de','en','fr','nl','tr']
 WORD_COUNT = 200000					#set -1 to parse all words
 dataset_folder = 'dataset/'
-columns = ['cc', 'cv', 'vc', 'vv', 'samecc', 'samevv',
+columns = ['cc', 'cv', 'vc', 'vv', 'samevv', 'samecc',
 			'ccc', 'ccv', 'cvc', 'cvv', 'vcc', 'vcv', 'vvc', 'vvv',
 			'avgwordlen', 'wordcnt']
 

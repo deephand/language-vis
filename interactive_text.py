@@ -3,12 +3,6 @@ import pandas as pd
 from dataset_functions import *
 from text_functions import *
 
-#dataset source: https://invokeit.wordpress.com/frequency-word-lists/
-#languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
-##currently available languages:
-languages = ['de','en','fr','nl','tr']
-dataset_folder = 'dataset/'
-WORD_COUNT = 200000					#set -1 to parse all words
 text = ""
 CONSOLE_WIDTH = 170
 
