@@ -6,15 +6,18 @@ import pickle
 import argparse
 import os.path
 
-
 #dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
 ##currently available languages:
 languages = ['de','en','fr','nl','tr']
 dataset_folder = 'dataset/'
-WORD_COUNT = 100000					#set -1 to parse all words
+WORD_COUNT = 200000					#set -1 to parse all words
 text = ""
+CONSOLE_WIDTH = 170
 
+columns = ['cc', 'cv', 'vc', 'vv', 'samecc', 'samevv',
+			'ccc', 'ccv', 'cvc', 'cvv', 'vcc', 'vcv', 'vvc', 'vvv',
+			'avgwordlen', 'wordcnt']
 
 ##set_characters function:
 #use this function to generate consonants & vowels for languages
@@ -77,7 +80,7 @@ def read_files(languages, refresh_cache = False):
 	else:
 		print('cache found for the files')
 		dataFrames = pickle.load(open(dataset_folder+"dataframes.p", "rb" ))
-		
+
 	return dataFrames
 
 
@@ -98,33 +101,37 @@ def remove_intruders_all(dataFrames, consonants, vowels):
 		#print(bad_words)
 	return dataFrames
 
+
 ##calculate_features function:
 #calculates the number of concurrences of 2-grams
 #consonant after consonant(0), consonant after vowel(1), etc
 #same consonants(4), same vowels(5)
 def calculate_features(dataFrame, consonants, vowels, language):
-	feature_list = np.zeros(8)
+	feature_list = np.zeros(16)
 	words = dataFrame.index.values
 	for word in words:
 		word = str(word)
 		word_bool = [int(char in vowels) for char in list(word)]
-		word_convert = np.array([word_bool[idx] * 2 + word_bool[idx + 1] for
+		word_convert_2 = np.array([word_bool[idx] * 2 + word_bool[idx + 1] for
 										idx in range(len(word_bool) - 1)])
-		word_convert2 = np.array([word[idx] == word[idx+1] for idx in range(len(word) - 1)
+		word_convert_3 = np.array([word_bool[idx]*4 + word_bool[idx+1]*2 + \
+		 								word_bool[idx+2] for idx in range(len(word_bool) - 2)])
+		word_convert_samevv = np.array([word[idx] == word[idx+1] for idx in range(len(word) - 1)
 									if word[idx] in vowels])
-		word_convert3 = np.array([word[idx] == word[idx+1] for idx in range(len(word) - 1)
+		word_convert_samecc = np.array([word[idx] == word[idx+1] for idx in range(len(word) - 1)
 									if word[idx] in consonants])
-		cnts = np.array([sum(word_convert == i) for i in range(4)])
-		feature_list[:4] = feature_list[:4] + cnts
-		feature_list[4] = feature_list[4] + sum(word_convert2)
-		feature_list[5] = feature_list[5] + sum(word_convert3)
-		feature_list[6] = feature_list[6] + len(word)
+		cnts_2 = np.array([sum(word_convert_2 == i) for i in range(4)])
+		cnts_3 = np.array([sum(word_convert_3 == i) for i in range(8)])
+		feature_list[:4] = feature_list[:4] + cnts_2
+		feature_list[4] = feature_list[4] + sum(word_convert_samevv)
+		feature_list[5] = feature_list[5] + sum(word_convert_samecc)
+		feature_list[6:14] = feature_list[6:14] + cnts_3
+		feature_list[14] = feature_list[14] + len(word)
 		#print(word, cnts, sum(word_convert2), sum(word_convert3))
-	feature_list[7] = len(words)
+	feature_list[15] = len(words)
 	dataFrame_one = pd.DataFrame(data=[feature_list],
 								index=[language],
-								columns=['cc', 'cv', 'vc', 'vv', 'samevv',
-										'samecc','totalwordlen','wordcnt'])
+								columns=columns)
 	return dataFrame_one
 
 def calculate_features_all(dataFrames, consonants, vowels, refresh_cache = False):
@@ -145,10 +152,15 @@ def calculate_features_all(dataFrames, consonants, vowels, refresh_cache = False
 #they are normalized to the sum of cc,cv,vc,vv
 def normalize_toall(df):
 	df_n = pd.DataFrame(df, copy=True)
+	#normalize 2-grams
 	df_n.iloc[:,4:6] = df_n.iloc[:,4:6].div(df_n.iloc[:,0:4].sum(axis=1), axis=0)
 	df_n.iloc[:,0:4] = df_n.iloc[:,0:4].div(df_n.iloc[:,0:4].sum(axis=1), axis=0)
-	df_n.iloc[:,6] = df_n.iloc[:,6].div(df_n.iloc[:,7], axis=0)
+	#normalize 3-grams
+	df_n.iloc[:,6:14] = df_n.iloc[:,6:14].div(df_n.iloc[:,6:14].sum(axis=1), axis=0)
+	#average word length
+	df_n.iloc[:,14] = df_n.iloc[:,14].div(df_n.iloc[:,15], axis=0)
 	return df_n
+
 
 ##calculate_str_features function:
 #this function returns the normalized features in all languages of a given text
@@ -180,7 +192,6 @@ def err_l2(mx1, mx2):
 def err_l1(mx1, mx2):
 	return np.sum(np.absolute((mx1 - mx2)), axis=1)
 
-
 ##evaluate function:
 #the first six functions are used for evaluation without weighting
 def evaluate(str_features, language_features, evalfun = err_l2):
@@ -190,28 +201,30 @@ def evaluate(str_features, language_features, evalfun = err_l2):
 
 
 if __name__ == "__main__":
-	
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-r", "--refresh", help="refresh data cache",
                     action="store_true")
 	args = parser.parse_args()
 
+	pd.set_option('display.width', CONSOLE_WIDTH)
+
 	print("setting characters...")
-	consonants, vowels = set_characters(languages, True)
+	consonants, vowels = set_characters(languages, False)
 	print("reading datasets...")
 	dataFrames = read_files(languages, refresh_cache=args.refresh)
 	print("removing erroneous words...")
 	dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
-	print("calculating 2-gram features of the dataset...")
+	print("calculating 2-gram and 3-gram features of the dataset...")
 	df = calculate_features_all(dataFrames, consonants, vowels, refresh_cache=args.refresh)
 	df_n = normalize_toall(df)
-	print(df_n.iloc[:,0:7], '\n')
 	while text != "q":
 		text = input("Enter a text, q to exit: ")
 		if text is "q":
 			break
 		print("calculating 2-gram features of the input text...")
 		str_features = calculate_str_features(text, consonants, vowels, languages)
-		print(str_features[0:7], '\n')
+		print(df_n.iloc[:,0:15], '\n')
+		print(str_features.iloc[:,0:15], '\n')
 		val = evaluate(str_features, df_n)
 		print("Errors:", list(zip(languages,val)))
