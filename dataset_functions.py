@@ -1,20 +1,15 @@
-import matplotlib
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import pickle
-import argparse
 import os.path
+
 
 #dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
 ##currently available languages:
 languages = ['de','en','fr','nl','tr']
-dataset_folder = 'dataset/'
 WORD_COUNT = 200000					#set -1 to parse all words
-text = ""
-CONSOLE_WIDTH = 170
-
+dataset_folder = 'dataset/'
 columns = ['cc', 'cv', 'vc', 'vv', 'samecc', 'samevv',
 			'ccc', 'ccv', 'cvc', 'cvv', 'vcc', 'vcv', 'vvc', 'vvv',
 			'avgwordlen', 'wordcnt']
@@ -160,71 +155,3 @@ def normalize_toall(df):
 	#average word length
 	df_n.iloc[:,14] = df_n.iloc[:,14].div(df_n.iloc[:,15], axis=0)
 	return df_n
-
-
-##calculate_str_features function:
-#this function returns the normalized features in all languages of a given text
-def calculate_str_features(text, consonants, vowels, languages):
-	word_counts = {}
-	words = text.split(sep=' ')
-	for word in words:
-		if word in word_counts:
-			word_counts[word] += 1
-		else:
-			word_counts[word] = 1
-	df = pd.DataFrame.from_dict(word_counts, orient='index')
-	df = df.rename(columns={0: 'count'})
-	features_list = [calculate_features(
-						remove_intruders(df,consonants[language], vowels[language]),
-						consonants[language],
-						vowels[language],
-						language) for language in languages]
-	features = pd.concat(features_list)
-	features = normalize_toall(features)
-	return features
-
-
-##error function l2
-def err_l2(mx1, mx2):
-	return np.sum(np.power((mx1 - mx2), 2), axis=1)
-
-##error function l1
-def err_l1(mx1, mx2):
-	return np.sum(np.absolute((mx1 - mx2)), axis=1)
-
-##evaluate function:
-#the first six functions are used for evaluation without weighting
-def evaluate(str_features, language_features, evalfun = err_l2):
-	mx1 = np.array(str_features.iloc[:,0:6])
-	mx2 = np.array(language_features.iloc[:,0:6])
-	return evalfun(mx1, mx2)
-
-
-if __name__ == "__main__":
-
-	parser = argparse.ArgumentParser()
-	parser.add_argument("-r", "--refresh", help="refresh data cache",
-                    action="store_true")
-	args = parser.parse_args()
-
-	pd.set_option('display.width', CONSOLE_WIDTH)
-
-	print("setting characters...")
-	consonants, vowels = set_characters(languages, False)
-	print("reading datasets...")
-	dataFrames = read_files(languages, refresh_cache=args.refresh)
-	print("removing erroneous words...")
-	dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
-	print("calculating 2-gram and 3-gram features of the dataset...")
-	df = calculate_features_all(dataFrames, consonants, vowels, refresh_cache=args.refresh)
-	df_n = normalize_toall(df)
-	while text != "q":
-		text = input("Enter a text, q to exit: ")
-		if text is "q":
-			break
-		print("calculating 2-gram features of the input text...")
-		str_features = calculate_str_features(text, consonants, vowels, languages)
-		print(df_n.iloc[:,0:15], '\n')
-		print(str_features.iloc[:,0:15], '\n')
-		val = evaluate(str_features, df_n)
-		print("Errors:", list(zip(languages,val)))
