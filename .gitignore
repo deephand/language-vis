@@ -1,3 +1,3 @@
 dataset/features.p
 dataset/dataframes.p
-dataset/wiki/database.txt
+dataset/wiki/*

@@ -4,7 +4,7 @@ import re
 import string
 import time
 
-seed_page = "https://en.0wikipedia.org"
+seed_page = "https://en.0wikipedia.org/index.php?q=aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvTWFpbl9QYWdl"
 
 def download_page(url):
     try:
@@ -12,14 +12,18 @@ def download_page(url):
         headers['User-Agent'] = "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.27 Safari/537.17"
         req = urllib.request.Request(url)
         resp = urllib.request.urlopen(req)
-        respData = str(resp.read())
+        # print(str(type(resp.read())))
+        # print(resp.read())
+        # print(resp.read().decode('utf-8', 'ignore'))
+        # print(url)
+        respData = str(resp.read().decode('utf-8', 'ignore'))
         return respData
     except Exception as e:
         print(str(e))
 
 
 def get_title(raw_html):
-    starting_tag = r'<h1 id="firstHeading" class="firstHeading" lang="en">'
+    starting_tag = r'<h1 id="firstHeading" class="firstHeading" lang='
     ending_tag = '</h1>'
 
     starting_place = raw_html.find(starting_tag)
@@ -79,7 +83,7 @@ def get_all_links(page):
     return links
 
 def extension_scan(url):
-    a = ['.png','.jpg','.jpeg','.gif','.tif','.txt']
+    a = ['.png','.jpg','.jpeg','.gif','.tif','.txt', '.oga']
     j = 0
     while j < (len(a)):
         if a[j] in url:
@@ -132,14 +136,18 @@ def url_parse(url):
 
 if __name__ == "__main__":
     url = "https://en.0wikipedia.org/index.php?q=aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvU3BhY2V0aW1l"
+    # url = 'https://tr.0wikipedia.org/index.php?q=aHR0cHM6Ly90ci53aWtpcGVkaWEub3JnL3dpa2kvQWxiZXJ0X0VpbnN0ZWlu'
+    # url = 'https://api.opendota.com/api/promatches'
 
     to_crawl = [url]
     crawled=[]
     database = {}
 
+    lang = 'en'
+
     for k in range(0, 3):
         i=0        #Initiate Variable to count No. of Iterations
-        while i<3:     #Continue Looping till the 'to_crawl' list is not empty
+        while i<4:     #Continue Looping till the 'to_crawl' list is not empty
             url_in = to_crawl.pop(0)      #If there are elements in to_crawl then pop out the first element
             url_in,flag = url_parse(url_in)
             flag2 = extension_scan(url_in)
@@ -149,9 +157,6 @@ if __name__ == "__main__":
             if flag == 1 or flag2 == 1:
                 pass        #Do Nothing
 
-            # if False:
-            #     pass
-                
             else:       
                 if url_in in crawled:     #Else check if the URL is already crawled
                     pass        #Do Nothing
@@ -169,14 +174,25 @@ if __name__ == "__main__":
                     to_crawl = to_crawl + get_all_links(raw_introduction)
                     crawled.append(url_in)
                     
-                    database[title] = raw_introduction      #Add title and its introduction to the dict
-                    
+                    clr_introduction = re.sub(r'<.+?>', '', get_introduction(raw_html))
+                    clr_introduction = re.sub(r'\[.+?\]', '', clr_introduction)
+                    clr_introduction = clr_introduction.replace('\n', '')
+
+                    content = get_content(raw_html)
+
+                    database[title] = clr_introduction      #Add title and its introduction to the dict
+
                     #Writing the output data into a text file
-                    file = open('dataset/wiki/database.txt', 'a')        #Open the text file called database.txt
+                    file = open('dataset/wiki/wiki_{}_{}.txt'.format(title, lang), 'a', encoding = 'utf-8')        #Open the text file called database.txt
                     file.write(title + ": " + "\n")         #Write the title of the page
-                    file.write(re.sub(r'<.+?>', '', get_introduction(raw_html)) + "\n\n")      #write the introduction of that page
+                    file.write("Introduction" + '\n')
+                    file.write(clr_introduction + "\n\n")      
+                    file.write("Content" + '\n')
+                    file.write(content + "\n") 
                     file.close()                            #Close the file
     
+                    print(clr_introduction)
+
                     #Remove duplicated from to_crawl
                     n = 1
                     j = 0
