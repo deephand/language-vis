@@ -111,23 +111,16 @@ def url_parse(url):
         elif "#" in url:
             url = url[:url.find("#")]
             flag = 0
-        elif "?" in url:
-            url = url[:url.find("?")]
-            flag = 0
+        # elif "?" in url:
+        #     url = url[:url.find("?")]
+        #     flag = 0
         elif s.netloc == "":
             url = seed_page + s.path
             flag = 0
-        #elif "www" not in url:
-        #    url = "www."[:7] + url[7:]
-        #    flag = 0
             
         elif url[len(url)-1] == "/":
             url = url[:-1]
-            flag = 0
-        #elif s.netloc != t.netloc:
-        #    url = url
-        #    flag = 1
-        #    break        
+            flag = 0      
         else:
             url = url
             flag = 0
@@ -148,16 +141,16 @@ if __name__ == "__main__":
         i=0        #Initiate Variable to count No. of Iterations
         while i<3:     #Continue Looping till the 'to_crawl' list is not empty
             url_in = to_crawl.pop(0)      #If there are elements in to_crawl then pop out the first element
-            # url_in,flag = url_parse(url_in)
-            # flag2 = extension_scan(url_in)
+            url_in,flag = url_parse(url_in)
+            flag2 = extension_scan(url_in)
             time.sleep(3)
             
-            #If flag = 1, then the URL is outside the seed domain URL
-            # if flag == 1 or flag2 == 1:
-            #     pass        #Do Nothing
+            # If flag = 1, then the URL is outside the seed domain URL
+            if flag == 1 or flag2 == 1:
+                pass        #Do Nothing
 
-            if False:
-                pass
+            # if False:
+            #     pass
                 
             else:       
                 if url_in in crawled:     #Else check if the URL is already crawled
