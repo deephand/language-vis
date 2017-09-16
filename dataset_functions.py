@@ -6,8 +6,7 @@ import os.path
 
 #dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
-##currently available languages:
-languages = ['de','en','fr','nl','tr']
+##currently available languages
 WORD_COUNT = 200000					#set -1 to parse all words
 dataset_folder = 'dataset/'
 columns = ['cc', 'cv', 'vc', 'vv', 'samevv', 'samecc',
@@ -23,26 +22,31 @@ columns = ['cc', 'cv', 'vc', 'vv', 'samevv', 'samecc',
 def set_characters(languages, lang_by_lang = True):
 	consonants = {}
 	vowels = {}
-	vowels['de'] =      set(['a','e','i','u','o','ü','ä','ö','ü'])
-	consonants['de'] =  set(['b','c','d','f','g','h','j','k','l','m',
+	if 'de' in languages:
+		vowels['de'] =      set(['a','e','i','u','o','ü','ä','ö','ü'])
+		consonants['de'] =  set(['b','c','d','f','g','h','j','k','l','m',
 						  	 'n','p','q','r','s','t','v','w','x','y',
 						  	 'z','ß'])
-	vowels['en'] = 	 	set(['a','e','i','u','o'])
-	consonants['en'] =  set(['b','c','d','f','g','h','j','k','l','m',
+	if 'en' in languages:
+		vowels['en'] = 	 	set(['a','e','i','u','o'])
+		consonants['en'] =  set(['b','c','d','f','g','h','j','k','l','m',
 						  	 'n','p','q','r','s','t','v','w','x','y',
 						  	 'z'])
-	vowels['tr'] = 	 	set(['a','e','i','u','o','ı','ü','ö','â','û',
+	if 'tr' in languages:
+		vowels['tr'] = 	 	set(['a','e','i','u','o','ı','ü','ö','â','û',
 						  	 'î'])
-	consonants['tr'] =  set(['b','c','d','f','g','h','j','k','l','m',
+		consonants['tr'] =  set(['b','c','d','f','g','h','j','k','l','m',
 						  	 'n','p','r','s','t','v','y','z','ç','ğ',
 						  	 'ş'])
-	vowels['nl'] = 	 	set(['a','e','i','u','o','ë'])
-	consonants['nl'] =  set(['b','c','d','f','g','h','j','k','l','m',
+	if 'nl' in languages:
+		vowels['nl'] = 	 	set(['a','e','i','u','o','ë'])
+		consonants['nl'] =  set(['b','c','d','f','g','h','j','k','l','m',
 						  	 'n','p','q','r','s','t','v','w','x','y',
 						  	 'z'])
-	vowels['fr'] = 	 	set(['a','e','i','u','o','æ','â','à','é','è',
+	if 'fr' in languages:
+		vowels['fr'] = 	 	set(['a','e','i','u','o','æ','â','à','é','è',
 						  	 'ê','ë','î','ï','ô','œ','ù','û','ü'])
-	consonants['fr'] =  set(['b','c','d','f','g','h','j','k','l','m',
+		consonants['fr'] =  set(['b','c','d','f','g','h','j','k','l','m',
 						  	 'n','p','q','r','s','t','v','w','x','y',
 						  	 'z','ç','ÿ'])
 	if not lang_by_lang:

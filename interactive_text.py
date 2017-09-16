@@ -5,6 +5,7 @@ from text_functions import *
 
 text = ""
 CONSOLE_WIDTH = 170
+languages = ['de','en','fr','nl','tr']
 
 if __name__ == "__main__":
 
@@ -16,7 +17,7 @@ if __name__ == "__main__":
 	pd.set_option('display.width', CONSOLE_WIDTH)
 
 	print("setting characters...")
-	consonants, vowels = set_characters(languages, False)
+	consonants, vowels = set_characters(languages, True)
 	print("reading datasets...")
 	dataFrames = read_files(languages, refresh_cache=args.refresh)
 	print("removing erroneous words...")
