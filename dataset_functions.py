@@ -7,7 +7,6 @@ import os.path
 #dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
 ##currently available languages
-WORD_COUNT = 200000					#set -1 to parse all words
 dataset_folder = 'dataset/'
 columns = ['cc', 'cv', 'vc', 'vv', 'samevv', 'samecc',
 			'ccc', 'ccv', 'cvc', 'cvv', 'vcc', 'vcv', 'vvc', 'vvv',
@@ -67,7 +66,7 @@ def set_characters(languages, lang_by_lang = True):
 #given all the languages, reads the word list in the dataset folder
 #returns dataFrames with the first WORD_COUNT words for every language
 #words as index and counts in count column
-def read_files(languages, refresh_cache = False):
+def read_files(languages, word_count=WORD_COUNT, refresh_cache = False):
 	if not os.path.isfile(dataset_folder+"dataframes.p") or refresh_cache:
 		dataFrames = {}
 		for language in languages:
