@@ -7,6 +7,7 @@ import os.path
 #dataset source: https://invokeit.wordpress.com/frequency-word-lists/
 #languages = ['de', 'en', 'es', 'fi', 'fr', 'id', 'it', 'ms', 'nl', 'pt', 'sv', 'tr']
 ##currently available languages
+WORD_COUNT = 200000					#set -1 to parse all words
 dataset_folder = 'dataset/'
 columns = ['cc', 'cv', 'vc', 'vv', 'samevv', 'samecc',
 			'ccc', 'ccv', 'cvc', 'cvv', 'vcc', 'vcv', 'vvc', 'vvv',
