@@ -1,5 +1,5 @@
 #modified from: https://matplotlib.org/examples/api/radar_chart.html
-
+#and here: https://datascience.stackexchange.com/questions/6084/how-do-i-create-a-complex-radar-chart
 """
 ======================================
 Radar chart (aka spider or star chart)
@@ -24,15 +24,21 @@ import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
-from matplotlib.path import Path
-from matplotlib.spines import Spine
-from matplotlib.projections.polar import PolarAxes
-from matplotlib.projections import register_projection
 
 import _thread
 import os
 
+from math import ceil
 
+
+def waitForQ():
+	while True:
+		c = input()
+		if c is 'q' or c is 'Q':
+			os._exit(0)
+		print('enter q to exit')
+
+###Option 1
 def radar_factory(num_vars, frame='circle'):
     """Create a radar chart with `num_vars` axes.
 
@@ -125,18 +131,78 @@ def unit_poly_verts(theta):
     x0, y0, r = [0.5] * 3
     verts = [(r*np.cos(t) + x0, r*np.sin(t) + y0) for t in theta]
     return verts
+###Option 1
 
-def waitForQ():
-	while True:
-		c = input()
-		if c is 'q' or c is 'Q':
-			os._exit(0)
-		print('enter q to exit')
+### Option 2
+def _invert(x, limits):
+    """inverts a value x on a scale from
+    limits[0] to limits[1]"""
+    return limits[1] - (x - limits[0])
+
+def _scale_data(data, ranges):
+    """scales data[1:] to ranges[0],
+    inverts if the scale is reversed"""
+    for d, (y1, y2) in zip(data[1:], ranges[1:]):
+        assert (y1 <= d <= y2) or (y2 <= d <= y1)
+    x1, x2 = ranges[0]
+    d = data[0]
+    if x1 > x2:
+        d = _invert(d, (x1, x2))
+        x1, x2 = x2, x1
+    sdata = [d]
+    for d, (y1, y2) in zip(data[1:], ranges[1:]):
+        if y1 > y2:
+            d = _invert(d, (y1, y2))
+            y1, y2 = y2, y1
+        sdata.append((d-y1) / (y2-y1)
+                     * (x2 - x1) + x1)
+    return sdata
+
+class ComplexRadar():
+    def __init__(self, fig, variables, ranges,
+                 n_ordinate_levels=6):
+        angles = np.arange(0, 360, 360./len(variables))
+
+        axes = [fig.add_axes([0.07,0.05,0.87,0.85],polar=True,
+                label = "axes{}".format(i))
+                for i in range(len(variables))]
+        l, text = axes[0].set_thetagrids(angles,
+                                         labels=variables)
+        [txt.set_rotation(angle-90) for txt, angle
+             in zip(text, angles)]
+        for ax in axes[1:]:
+            ax.patch.set_visible(False)
+            ax.grid("off")
+            ax.xaxis.set_visible(False)
+        for i, ax in enumerate(axes):
+            grid = np.linspace(*ranges[i],
+                               num=n_ordinate_levels)
+            gridlabel = ["{}".format(round(x,2))
+                         for x in grid]
+            if ranges[i][0] > ranges[i][1]:
+                grid = grid[::-1] # hack to invert grid
+                          # gridlabels aren't reversed
+            gridlabel[0] = "" # clean up origin
+            ax.set_rgrids(grid, labels=gridlabel,
+                         angle=angles[i])
+            #ax.spines["polar"].set_visible(False)
+            ax.set_ylim(*ranges[i])
+        # variables for plotting
+        self.angle = np.deg2rad(np.r_[angles, angles[0]])
+        self.ranges = ranges
+        self.ax = axes[0]
+    def plot(self, data, *args, **kw):
+        sdata = _scale_data(data, self.ranges)
+        self.ax.plot(self.angle, np.r_[sdata, sdata[0]], *args, **kw)
+    def fill(self, data, *args, **kw):
+        sdata = _scale_data(data, self.ranges)
+        self.ax.fill(self.angle, np.r_[sdata, sdata[0]], *args, **kw)
+
+## Option 2
 
 if __name__ == '__main__':
 
-	_thread.start_new_thread(waitForQ, ())
-
+	plt.ion()
 	languages = ['de', 'en', 'fr', 'nl', 'tr']
 
 	parser = argparse.ArgumentParser()
@@ -158,28 +224,55 @@ if __name__ == '__main__':
 	df_n = normalize_toall(df)
 	print(df_n.iloc[:,0:6])
 
-	data = np.array(df_n.iloc[:,0:6])
+
 	spoke_labels = ['consonant-consonant', 'consonant-vowel', 'vowel-consonant',
 					'vowel-vowel', 'same vowel-vowel', 'same consonant-consonant']
 
 	N_AXES = 6
+	data = np.array(df_n.iloc[:,0:N_AXES])
+	##choose either this or the other one
+	# plt.style.use('ggplot')
+	# theta = radar_factory(N_AXES, frame='polygon')
+	#
+	# fig, axes = plt.subplots(figsize=(8,8), nrows=1, ncols=1,
+	# 						subplot_kw=dict(projection='radar'))
+	# #fig.subplots_adjust(wspace=0,hspace=0,top=1,bottom=0)
+	#
+	# ax = axes
+	# ax.set_rgrids([0.1, 0.2, 0.3, 0.4])
+	# ax.set_title("Distribution of 2-grams in various languages")
+	# colors = ['red', 'green', 'yellow', 'blue', 'magenta']
+	# for d,c in zip(data, colors):
+	# 	ax.plot(theta, d, color=c)
+	# 	ax.fill(theta, d, alpha=0.25, color=c)
+	#
+	# ax.set_varlabels(
+	# labels = languages
+	# ax.legend(labels, fontsize='small')
+
+	##option 2:
+	variables = ['consonant-consonant', 'consonant-vowel', 'vowel-consonant',
+					'vowel-vowel', 'same vowel-vowel', 'same consonant-consonant']
+	ranges1 = [(0.0001, ceil(10*max(df_n.iloc[:,i]))/10) for i in range(3)]
+	ranges2 = [(0.0001, ceil(100*max(df_n.iloc[:,i]))/100) for i in range(3,6)]
+	ranges = ranges1 + ranges2
+	print(ranges)
+	# plotting
 	#plt.style.use('ggplot')
-	theta = radar_factory(N_AXES, frame='polygon')
 
-	fig, axes = plt.subplots(figsize=(8,8), nrows=1, ncols=1,
-							subplot_kw=dict(projection='radar'))
-	#fig.subplots_adjust(wspace=0,hspace=0,top=1,bottom=0)
-
-	ax = axes
-	ax.set_rgrids([0.1, 0.2, 0.3, 0.4])
-	ax.set_title("Distribution of 2-grams in various languages")
+	fig1 = plt.figure(figsize=(8, 8))
+	variables = [variables[i] for i in range(N_AXES)]
+	ranges = [ranges[i] for i in range(N_AXES)]
+	radar = ComplexRadar(fig1, variables, ranges)
+	#radar.set_title("Distribution of 2-grams in various languages")
 	colors = ['red', 'green', 'yellow', 'blue', 'magenta']
 	for d,c in zip(data, colors):
-		ax.plot(theta, d, color=c)
-		ax.fill(theta, d, alpha=0.25, color=c)
+		radar.plot(d, color=c)
+		radar.fill(d, color=c, alpha=0.1)
+	###
+	radar.ax.legend(['de', 'en', 'fr', 'nl', 'tr'])
+	_thread.start_new_thread(waitForQ, ())
 
-	ax.set_varlabels([spoke_labels[i] for i in range(N_AXES)])
-	labels = languages
-	ax.legend(labels, fontsize='small')
-
+	plt.suptitle("Distribution of 2-grams in various languages", size=16)
 	plt.show()
+	plt.pause(0)
