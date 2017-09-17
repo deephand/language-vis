@@ -5,6 +5,7 @@ from text_functions import *
 
 text = ""
 CONSOLE_WIDTH = 170
+WORD_COUNT = 200000
 languages = ['de','en','fr','nl','tr']
 
 if __name__ == "__main__":
@@ -19,7 +20,7 @@ if __name__ == "__main__":
 	print("setting characters...")
 	consonants, vowels = set_characters(languages, True)
 	print("reading datasets...")
-	dataFrames = read_files(languages, refresh_cache=args.refresh)
+	dataFrames = read_files(languages, word_count=WORD_COUNT, refresh_cache=args.refresh)
 	print("removing erroneous words...")
 	dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
 	print("calculating 2-gram and 3-gram features of the dataset...")
