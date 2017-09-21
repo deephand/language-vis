@@ -3,7 +3,7 @@ from dataset_functions import *
 import matplotlib.pyplot as plt
 import matplotlib
 
-languages = ['de', 'en', 'fr', 'nl', 'tr']
+languages = ['de', 'en', 'fr', 'nl', 'tr', 'sv']
 
 if __name__ == "__main__":
 

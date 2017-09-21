@@ -5,6 +5,7 @@ import string
 import time
 
 seed_page = "https://en.0wikipedia.org/index.php?q=aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvTWFpbl9QYWdl"
+udp_link = "https://tr.0wikipedia.org/index.php?q=aHR0cHM6Ly90ci53aWtpcGVkaWEub3JnL3dpa2kvVURQ"
 
 def download_page(url):
     try:
@@ -32,15 +33,22 @@ def get_title(raw_html):
 
 def get_introduction(raw_html):
     starting_tag = r'<p>'
-    ending_tag = '<div class="toctitle">'
+    ending_tags = ['<div', '<h2>']
 
     starting_place = raw_html.find(starting_tag)
-    ending_place = raw_html.find(ending_tag, starting_place + 1)
 
-    if '<div class="toctitle">' not in raw_html:
+    ep1 = raw_html.find(ending_tags[0], starting_place + 1)
+    ep2 = raw_html.find(ending_tags[1], starting_place + 1)
+    if ep1 > 0 and ep2 > 0 and ep1 < ep2:
+        ending_place = ep1
+    elif ep1 > 0 and ep2 > 0 and ep1 >= ep2:
+        ending_place = ep2
+    elif ep1 > 0 and ep2 < 0:
+        ending_place = ep1
+    elif ep1 < 0 and ep2 > 0:
+        ending_place = ep2
+    elif ep1 < 0 and ep2 < 0:
         ending_place = raw_html.find('</p>', starting_place + 1)
-    else:
-        pass
 
     return(raw_html[starting_place : ending_place])
 
@@ -108,7 +116,7 @@ def url_parse(url):
     while i<=9:
         if url == "/":
             url = seed_page_n
-            flag = 0  
+            flag = 0
         elif not s.scheme:
             url = "http://" + url
             flag = 0
@@ -121,23 +129,24 @@ def url_parse(url):
         elif s.netloc == "":
             url = seed_page + s.path
             flag = 0
-            
+
         elif url[len(url)-1] == "/":
             url = url[:-1]
-            flag = 0      
+            flag = 0
         else:
             url = url
             flag = 0
             break
-        
+
         i = i+1
         s = urlparse(url)   #Parse after every loop to update the values of url parameters
     return(url, flag)
 
 if __name__ == "__main__":
     url = "https://en.0wikipedia.org/index.php?q=aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvU3BhY2V0aW1l"
-    # url = 'https://tr.0wikipedia.org/index.php?q=aHR0cHM6Ly90ci53aWtpcGVkaWEub3JnL3dpa2kvQWxiZXJ0X0VpbnN0ZWlu'
+    #url = 'https://tr.0wikipedia.org/index.php?q=aHR0cHM6Ly90ci53aWtpcGVkaWEub3JnL3dpa2kvQWxiZXJ0X0VpbnN0ZWlu'
     # url = 'https://api.opendota.com/api/promatches'
+    url = udp_link
 
     to_crawl = [url]
     crawled=[]
@@ -152,28 +161,28 @@ if __name__ == "__main__":
             url_in,flag = url_parse(url_in)
             flag2 = extension_scan(url_in)
             time.sleep(3)
-            
+
             # If flag = 1, then the URL is outside the seed domain URL
             if flag == 1 or flag2 == 1:
                 pass        #Do Nothing
 
-            else:       
+            else:
                 if url_in in crawled:     #Else check if the URL is already crawled
                     pass        #Do Nothing
                 else:       #If the URL is not already crawled, then crawl i and extract all the links from it
                     print("Link = " + url_in)
-                    
+
                     raw_html = download_page(url_in)
-                    
+
                     title_upper = str(get_title(raw_html))
                     title = title_upper.lower()     #Lower title to match user queries
                     print("Title = " + title)
-                    
+
                     raw_introduction = get_introduction(raw_html)
 
                     to_crawl = to_crawl + get_all_links(raw_introduction)
                     crawled.append(url_in)
-                    
+
                     clr_introduction = re.sub(r'<.+?>', '', get_introduction(raw_html))
                     clr_introduction = re.sub(r'\[.+?\]', '', clr_introduction)
                     clr_introduction = clr_introduction.replace('\n', '')
@@ -183,14 +192,14 @@ if __name__ == "__main__":
                     database[title] = clr_introduction      #Add title and its introduction to the dict
 
                     #Writing the output data into a text file
-                    file = open('dataset/wiki/wiki_{}_{}.txt'.format(title, lang), 'a', encoding = 'utf-8')        #Open the text file called database.txt
-                    file.write(title + ": " + "\n")         #Write the title of the page
-                    file.write("Introduction" + '\n')
-                    file.write(clr_introduction + "\n\n")      
-                    file.write("Content" + '\n')
-                    file.write(content + "\n") 
-                    file.close()                            #Close the file
-    
+                    # file = open('dataset/wiki/wiki_{}_{}.txt'.format(title, lang), 'a', encoding = 'utf-8')        #Open the text file called database.txt
+                    # file.write(title + ": " + "\n")         #Write the title of the page
+                    # file.write("Introduction" + '\n')
+                    # file.write(clr_introduction + "\n\n")
+                    # file.write("Content" + '\n')
+                    # file.write(content + "\n")
+                    # file.close()                            #Close the file
+
                     print(clr_introduction)
 
                     #Remove duplicated from to_crawl

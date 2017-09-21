@@ -1,20 +1,5 @@
 #modified from: https://matplotlib.org/examples/api/radar_chart.html
 #and here: https://datascience.stackexchange.com/questions/6084/how-do-i-create-a-complex-radar-chart
-"""
-======================================
-Radar chart (aka spider or star chart)
-======================================
-
-This example creates a radar chart, also known as a spider or star chart [1]_.
-
-Although this example allows a frame of either 'circle' or 'polygon', polygon
-frames don't have proper gridlines (the lines are circles instead of polygons).
-It's possible to get a polygon grid by setting GRIDLINE_INTERPOLATION_STEPS in
-matplotlib.axis to the desired number of vertices, but the orientation of the
-polygon is not aligned with the radial axes.
-
-.. [1] http://en.wikipedia.org/wiki/Radar_chart
-"""
 from dataset_functions import *
 
 import argparse
@@ -197,13 +182,17 @@ class ComplexRadar():
     def fill(self, data, *args, **kw):
         sdata = _scale_data(data, self.ranges)
         self.ax.fill(self.angle, np.r_[sdata, sdata[0]], *args, **kw)
-
 ## Option 2
 
 if __name__ == '__main__':
 
 	plt.ion()
-	languages = ['de', 'en', 'fr', 'nl', 'tr']
+
+	languages = ['de', 'en', 'fr', 'nl', 'tr', 'sv', 'ms', 'fi']
+	colors = ['red', 'green', 'yellow', 'blue', 'magenta','darkblue','darkgreen','orange']
+	plt.style.use('ggplot')
+	#languages = ['de', 'en', 'tr', 'sv', 'fi']
+	#colors = ['red', 'green', 'yellow', 'blue', 'magenta']
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-r", "--refresh", help="refresh data cache",
@@ -218,11 +207,11 @@ if __name__ == '__main__':
 	print("reading datasets...")
 	dataFrames = read_files(languages, refresh_cache=args.refresh)
 	print("removing erroneous words...")
-	dataFrames = remove_intruders_all(dataFrames, consonants, vowels)
+	dataFrames = remove_intruders_all(dataFrames, consonants, vowels, refresh_cache=args.refresh)
 	print("calculating 2-gram and 3-gram features of the dataset...")
 	df = calculate_features_all(dataFrames, consonants, vowels, refresh_cache=args.refresh)
 	df_n = normalize_toall(df)
-	print(df_n.iloc[:,0:6])
+	print(df_n.iloc[:,:])
 
 
 	spoke_labels = ['consonant-consonant', 'consonant-vowel', 'vowel-consonant',
@@ -231,7 +220,6 @@ if __name__ == '__main__':
 	N_AXES = 6
 	data = np.array(df_n.iloc[:,0:N_AXES])
 	##choose either this or the other one
-	# plt.style.use('ggplot')
 	# theta = radar_factory(N_AXES, frame='polygon')
 	#
 	# fig, axes = plt.subplots(figsize=(8,8), nrows=1, ncols=1,
@@ -240,8 +228,6 @@ if __name__ == '__main__':
 	#
 	# ax = axes
 	# ax.set_rgrids([0.1, 0.2, 0.3, 0.4])
-	# ax.set_title("Distribution of 2-grams in various languages")
-	# colors = ['red', 'green', 'yellow', 'blue', 'magenta']
 	# for d,c in zip(data, colors):
 	# 	ax.plot(theta, d, color=c)
 	# 	ax.fill(theta, d, alpha=0.25, color=c)
@@ -253,24 +239,23 @@ if __name__ == '__main__':
 	##option 2:
 	variables = ['consonant-consonant', 'consonant-vowel', 'vowel-consonant',
 					'vowel-vowel', 'same vowel-vowel', 'same consonant-consonant']
-	ranges1 = [(0.0001, ceil(10*max(df_n.iloc[:,i]))/10) for i in range(3)]
-	ranges2 = [(0.0001, ceil(100*max(df_n.iloc[:,i]))/100) for i in range(3,6)]
+	ranges1 = [(0.00001, ceil(10*max(df_n.iloc[:,i]))/10) for i in range(3)]
+	ranges2 = [(0.00001, ceil(100*max(df_n.iloc[:,i]))/100) for i in range(3,6)]
 	ranges = ranges1 + ranges2
 	print(ranges)
 	# plotting
-	#plt.style.use('ggplot')
+	plt.style.use('ggplot')
 
 	fig1 = plt.figure(figsize=(8, 8))
 	variables = [variables[i] for i in range(N_AXES)]
 	ranges = [ranges[i] for i in range(N_AXES)]
 	radar = ComplexRadar(fig1, variables, ranges)
-	#radar.set_title("Distribution of 2-grams in various languages")
-	colors = ['red', 'green', 'yellow', 'blue', 'magenta']
+	colors = ['red', 'green', 'yellow', 'blue', 'magenta','darkblue','darkgreen','orange']
 	for d,c in zip(data, colors):
 		radar.plot(d, color=c)
 		radar.fill(d, color=c, alpha=0.1)
 	###
-	radar.ax.legend(['de', 'en', 'fr', 'nl', 'tr'])
+	radar.ax.legend(languages)
 	_thread.start_new_thread(waitForQ, ())
 
 	plt.suptitle("Distribution of 2-grams in various languages", size=16)

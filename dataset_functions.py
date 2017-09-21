@@ -19,18 +19,18 @@ columns = ['cc', 'cv', 'vc', 'vv', 'samevv', 'samecc',
 #in the sets 'consonants' and 'vowels'
 #to use the same vowels & consonants in all languages
 #call the function with lang_by_lang = False
-def set_characters(languages, lang_by_lang = True):
+def set_characters(languages, lang_by_lang=True):
 	consonants = {}
 	vowels = {}
 	if 'de' in languages:
-		vowels['de'] =      set(['a','e','i','u','o','ü','ä','ö','ü'])
+		vowels['de'] =      set(['a','e','i','u','o','ü','ä','ö','ü','y'])
 		consonants['de'] =  set(['b','c','d','f','g','h','j','k','l','m',
-						  	 'n','p','q','r','s','t','v','w','x','y',
+						  	 'n','p','q','r','s','t','v','w','x',
 						  	 'z','ß'])
 	if 'en' in languages:
-		vowels['en'] = 	 	set(['a','e','i','u','o'])
+		vowels['en'] = 	 	set(['a','e','i','u','o','y'])
 		consonants['en'] =  set(['b','c','d','f','g','h','j','k','l','m',
-						  	 'n','p','q','r','s','t','v','w','x','y',
+						  	 'n','p','q','r','s','t','v','w','x',
 						  	 'z'])
 	if 'tr' in languages:
 		vowels['tr'] = 	 	set(['a','e','i','u','o','ı','ü','ö','â','û',
@@ -45,10 +45,25 @@ def set_characters(languages, lang_by_lang = True):
 						  	 'z'])
 	if 'fr' in languages:
 		vowels['fr'] = 	 	set(['a','e','i','u','o','æ','â','à','é','è',
-						  	 'ê','ë','î','ï','ô','œ','ù','û','ü'])
+						  	 'ê','ë','î','ï','ô','œ','ù','û','ü','y',
+							 'ÿ'])
 		consonants['fr'] =  set(['b','c','d','f','g','h','j','k','l','m',
-						  	 'n','p','q','r','s','t','v','w','x','y',
-						  	 'z','ç','ÿ'])
+						  	 'n','p','q','r','s','t','v','w','x','z',
+							 'ç'])
+	if 'sv' in languages:
+		vowels['sv'] = 	 	set(['a','e','i','u','o','å','ä','ö','y'])
+		consonants['sv'] =  set(['b','c','d','f','g','h','j','k','l','m',
+						  	 'n','p','q','r','s','t','v','w','x','z'])
+	if 'ms' in languages:
+		vowels['ms'] = 	 	set(['a','e','i','u','o','é','ĕ'])
+		consonants['ms'] =  set(['b','c','d','f','g','h','j','k','l','m',
+							 'n','p','q','r','s','t','v','w','x','y'
+						 	 'z'])
+	if 'fi' in languages:
+		vowels['fi'] = 	 	set(['a','e','i','u','o','å','ä','ö','y'])
+		consonants['fi'] =  set(['b','c','d','f','g','h','j','k','l','m',
+							 'n','p','q','r','s','t','v','w','x',
+						 	 'z','š','ž'])
 	if not lang_by_lang:
 		consonants_all = []
 		vowels_all = []
@@ -67,7 +82,7 @@ def set_characters(languages, lang_by_lang = True):
 #given all the languages, reads the word list in the dataset folder
 #returns dataFrames with the first WORD_COUNT words for every language
 #words as index and counts in count column
-def read_files(languages, word_count=WORD_COUNT, refresh_cache = False):
+def read_files(languages, word_count=WORD_COUNT, refresh_cache=False):
 	if not os.path.isfile(dataset_folder+"dataframes.p") or refresh_cache:
 		dataFrames = {}
 		for language in languages:
@@ -92,12 +107,17 @@ def remove_intruders(dataFrame, consonants, vowels):
 	df = dataFrame.drop(bad_words, axis=0)
 	return df
 
-def remove_intruders_all(dataFrames, consonants, vowels):
-	for language in dataFrames:
-		#print(vowels[language]+consonants[language])
-		dataFrames[language] = remove_intruders(dataFrames[language], consonants[language],
-												vowels[language])
-		#print(bad_words)
+def remove_intruders_all(dataFrames, consonants, vowels, refresh_cache=False):
+	if not os.path.isfile(dataset_folder+"dataframes_clean.p") or refresh_cache:
+		for language in dataFrames:
+			#print(vowels[language]+consonants[language])
+			dataFrames[language] = remove_intruders(dataFrames[language], consonants[language],
+													vowels[language])
+			#print(bad_words)
+		pickle.dump(dataFrames, open(dataset_folder+"dataframes_clean.p", "wb" ))
+	else:
+		print('cache found for the files')
+		dataFrames = pickle.load(open(dataset_folder+"dataframes_clean.p", "rb" ))
 	return dataFrames
 
 
@@ -133,7 +153,7 @@ def calculate_features(dataFrame, consonants, vowels, language):
 								columns=columns)
 	return dataFrame_one
 
-def calculate_features_all(dataFrames, consonants, vowels, refresh_cache = False):
+def calculate_features_all(dataFrames, consonants, vowels, refresh_cache=False):
 	if not os.path.isfile(dataset_folder+"features.p") or refresh_cache:
 		frames = [calculate_features(dataFrames[language], consonants[language],
 					vowels[language], language) for	language in dataFrames]
