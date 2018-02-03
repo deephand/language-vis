@@ -1,2 +1,2 @@
-Here are some datasets & a python script
-to examine the character order of words in various languages.
+This is a data mining/analysis project about mining and visualization of properties of different languages. Maintained by Adem Derinel (@deephand) and Burak Catli (@DeepBurner). Below are some fancy images. 
+
